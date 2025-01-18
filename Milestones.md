@@ -2,7 +2,7 @@
 
 ### 1: Basic Implementation
 
-- [x] Webapp on laptop
+- [ ] Webapp on laptop
 - [ ] Android APK on phone
 - [ ] Try to login to acc on webapp, communicate that with phone
 - [ ] Sends a prompt to phone, check to authenticate
@@ -14,6 +14,7 @@
 - [ ] Gyroscope/Accelerometer data to see tilting on the phone app
 - [ ] When tilt with +/- 10 deg for tolerance 
 - [ ] Implement backend to do random image+tilt, send signal to both apps
+- [ ] Implement QR code to allow 2FA
 - [ ] When phone angle reached, handshake w/ backend
 - [ ] Backend sends okay to webapp, allows login through!
 ### 3: API Bounties
