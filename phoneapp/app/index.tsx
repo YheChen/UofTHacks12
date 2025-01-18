@@ -1,110 +1,107 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
-import { Accelerometer, Gyroscope } from "expo-sensors";
+import React, { useState, useEffect, useRef } from "react";
+import { Text, View, Button, StyleSheet } from "react-native";
+import { Gyroscope } from "expo-sensors";
 
-export default function OrientationApp() {
-  const [accelerometerData, setAccelerometerData] = useState({
+interface GyroData {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export default function GyroDisplacementExample() {
+  // Store the raw gyroscope data (radians/sec)
+  const [gyroData, setGyroData] = useState<GyroData>({ x: 0, y: 0, z: 0 });
+
+  // Store the integrated angles (radians) since "Start"
+  // (We will convert them to degrees if we want to display them as degrees.)
+  const [cumulativeAngles, setCumulativeAngles] = useState<GyroData>({
     x: 0,
     y: 0,
     z: 0,
   });
-  const [gyroscopeData, setGyroscopeData] = useState({ x: 0, y: 0, z: 0 });
-  const [zeroedData, setZeroedData] = useState({ pitch: 0, roll: 0, yaw: 0 });
-  const [isCentered, setIsCentered] = useState(false);
-  const [cumulativeYaw, setCumulativeYaw] = useState(0);
+
+  // Whether we are currently measuring
+  const [isMeasuring, setIsMeasuring] = useState<boolean>(false);
+
+  // We’ll keep track of the last timestamp so we can do dt = (currentTime - lastTime)
+  const lastUpdateRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    // Start listening to accelerometer updates
-    Accelerometer.setUpdateInterval(100); // Update every 100ms
-    const accelSubscription = Accelerometer.addListener((data) => {
-      setAccelerometerData(data);
+    // Set the gyroscope update interval (milliseconds)
+    Gyroscope.setUpdateInterval(100);
+
+    const subscription = Gyroscope.addListener((data) => {
+      setGyroData(data);
+
+      if (isMeasuring) {
+        // Calculate time delta in seconds
+        const currentTime = Date.now();
+        const dt = (currentTime - lastUpdateRef.current) / 1000;
+        lastUpdateRef.current = currentTime;
+
+        // Integrate: angle += angularVelocity * dt
+        // data.x, data.y, data.z are in rad/s
+        setCumulativeAngles((prev) => ({
+          x: prev.x + data.x * dt,
+          y: prev.y + data.y * dt,
+          z: prev.z + data.z * dt,
+        }));
+      } else {
+        // If not measuring, reset the reference time
+        lastUpdateRef.current = Date.now();
+      }
     });
 
-    // Start listening to gyroscope updates
-    Gyroscope.setUpdateInterval(100); // Update every 100ms
-    const gyroSubscription = Gyroscope.addListener((data) => {
-      setGyroscopeData(data);
-
-      // Integrate gyroscope z-axis for yaw (raw integration in radians/sec * time)
-      // Note: This will drift over time unless you fuse with other sensors
-      setCumulativeYaw((prevYaw) => prevYaw + data.z * (100 / 1000));
-    });
-
-    // Cleanup listeners on component unmount
     return () => {
-      accelSubscription.remove();
-      gyroSubscription.remove();
+      subscription.remove();
     };
-  }, []);
+  }, [isMeasuring]);
 
-  const calculatePitchAndRoll = (x, y, z) => {
-    const pitch = Math.atan2(-z, Math.sqrt(x * x + y * y)) * (180 / Math.PI);
-    const roll = Math.atan2(x, Math.sqrt(y * y + z * z)) * (180 / Math.PI);
-    return { pitch, roll };
+  const handleStart = () => {
+    // Reset angles to zero
+    setCumulativeAngles({ x: 0, y: 0, z: 0 });
+    lastUpdateRef.current = Date.now();
+    setIsMeasuring(true);
   };
 
-  const handleCenter = () => {
-    // Calculate pitch and roll for the current accelerometer data
-    const { pitch, roll } = calculatePitchAndRoll(
-      accelerometerData.x,
-      accelerometerData.y,
-      accelerometerData.z
-    );
-    // Set zeroed data, including the current cumulative yaw
-    setZeroedData({ pitch, roll, yaw: cumulativeYaw });
-    setIsCentered(true);
+  const handleStop = () => {
+    setIsMeasuring(false);
   };
 
-  const getDisplacement = () => {
-    const { pitch, roll } = calculatePitchAndRoll(
-      accelerometerData.x,
-      accelerometerData.y,
-      accelerometerData.z
-    );
-    return {
-      pitch: pitch - zeroedData.pitch,
-      roll: roll - zeroedData.roll,
-      yaw: cumulativeYaw - zeroedData.yaw,
-    };
+  // Convert integrated radians to degrees for display
+  const anglesDeg = {
+    x: (cumulativeAngles.x * 180) / Math.PI,
+    y: (cumulativeAngles.y * 180) / Math.PI,
+    z: (cumulativeAngles.z * 180) / Math.PI,
   };
 
-  const displacement = isCentered
-    ? getDisplacement()
-    : { pitch: 0, roll: 0, yaw: 0 };
+  // If you want to see the raw gyro data (rad/s) displayed as well:
+  //  - data.x, data.y, data.z
 
   return (
     <View style={styles.container}>
-      {!isCentered ? (
-        <>
-          <Text style={styles.title}>Hold Your Phone Upright</Text>
-          <Text style={styles.subtitle}>
-            Hold the phone parallel to your face (perpendicular to the ground),
-            then press the button to zero the orientation.
-          </Text>
-          <Button title="Zero and Begin" onPress={handleCenter} />
-        </>
-      ) : (
-        <>
-          <Text style={styles.title}>Angular Displacement</Text>
-          <Text style={styles.data}>
-            Pitch: {displacement.pitch.toFixed(2)}°
-          </Text>
-          <Text style={styles.data}>Roll: {displacement.roll.toFixed(2)}°</Text>
-          <Text style={styles.data}>Yaw: {displacement.yaw.toFixed(2)}°</Text>
+      <Text style={styles.title}>Gyroscope Displacement Demo</Text>
 
-          {/* New line to display the raw gyroscope values */}
-          <Text style={styles.data}>
-            Gyroscope — X: {gyroscopeData.x.toFixed(2)}, Y:{" "}
-            {gyroscopeData.y.toFixed(2)}, Z: {gyroscopeData.z.toFixed(2)}
-          </Text>
+      {/* <Text style={styles.info}>
+        Raw Gyroscope (rad/s):
+        {"\n"}x: {gyroData.x.toFixed(3)}, y: {gyroData.y.toFixed(3)}, z:{" "}
+        {gyroData.z.toFixed(3)}
+      </Text> */}
 
-          <Text style={styles.instructions}>
-            Tilt and rotate the phone to see the angular displacement from the
-            zeroed position.
-          </Text>
-          <Button title="Reset" onPress={() => setIsCentered(false)} />
-        </>
-      )}
+      <Text style={styles.info}>
+        Cumulative Rotation (degrees) since Start:
+        {"\n"}x: {anglesDeg.x.toFixed(2)}°,
+        {"\n"}y: {anglesDeg.y.toFixed(2)}°,
+        {"\n"}z: {anglesDeg.z.toFixed(2)}°
+      </Text>
+
+      <View style={styles.buttonContainer}>
+        {!isMeasuring ? (
+          <Button title="Start" onPress={handleStart} />
+        ) : (
+          <Button title="Stop" onPress={handleStop} />
+        )}
+      </View>
     </View>
   );
 }
@@ -112,30 +109,21 @@ export default function OrientationApp() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     padding: 20,
-    backgroundColor: "#f5f5f5",
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    textAlign: "center",
     marginBottom: 20,
   },
-  subtitle: {
+  info: {
     fontSize: 16,
+    marginVertical: 10,
     textAlign: "center",
-    marginBottom: 20,
   },
-  data: {
-    fontSize: 18,
-    marginVertical: 5,
-  },
-  instructions: {
-    fontSize: 14,
-    textAlign: "center",
+  buttonContainer: {
     marginTop: 20,
-    color: "#666",
   },
 });
