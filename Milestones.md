@@ -2,7 +2,7 @@
 
 ### 1: Basic Implementation
 
-- [x] Webapp on laptop
+- [ ] Webapp on laptop
 - [ ] Android APK on phone
 - [ ] Try to login to acc on webapp, communicate that with phone
 - [ ] Sends a prompt to phone, check to authenticate
