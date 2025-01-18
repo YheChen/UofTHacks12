@@ -3,6 +3,11 @@
 /.pnp
 .pnp.js
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 1d68801813310d12b144a826f4c9ce6fd7c2cfb0
 # testing
 /coverage
 
@@ -34,7 +39,15 @@ yarn-error.log*
 
 # vercel
 .vercel
+<<<<<<< HEAD
 .yaml*
 yarn.lock
 
+=======
+
+.yaml*
+package-lock.json
+yarn.lock
+package.json
+>>>>>>> 1d68801813310d12b144a826f4c9ce6fd7c2cfb0
 
