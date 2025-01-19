@@ -95,7 +95,8 @@ export default function WebApp() {
         </button>
       ) : (
         <>
-          <h1 style={{ fontSize: "48px" }}>Web App</h1> {/* Larger heading */}
+          <h1 style={{ fontSize: "48px" }}>ViewFA Authentication</h1>{" "}
+          {/* Larger heading */}
           {verificationNumber ? (
             <p style={{ fontSize: "24px" }}>
               Please enter this number on the app:{" "}
