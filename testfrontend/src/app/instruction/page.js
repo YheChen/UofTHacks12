@@ -93,14 +93,14 @@ export default function InstructionPage() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: "50vh",
+            height: "40vh",
           }}
         >
           <img
             src={tiltImage}
             alt="Tilt Instruction"
             style={{
-              maxWidth: "80%",
+              maxWidth: "70%",
               height: "auto",
             }}
           />
