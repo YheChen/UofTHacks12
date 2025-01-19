@@ -8,8 +8,10 @@ import {
   getFirestore,
   collection,
   addDoc,
+  setDoc,
   onSnapshot,
   doc,
+  getDoc,
 } from "firebase/firestore";
 
 // Firebase configuration
@@ -35,27 +37,33 @@ export default function WebApp() {
 
   const createVerification = async () => {
     const randomNumber = Math.floor(Math.random() * 900) + 100; // Generate a random 3-digit number
+    const orientationNumber = Math.floor(Math.random() * 5) + 1;
     setVerificationNumber(randomNumber);
 
     try {
-      const docRef = await addDoc(collection(db, "verifications"), {
-        number: randomNumber,
-        detected: false,
-        verified: false,
+      // Set individual documents
+      await setDoc(doc(db, "verifications", "verificationNumber"), {
+        value: randomNumber,
       });
-      setDocId(docRef.id);
+      await setDoc(doc(db, "verifications", "detected"), { value: false });
+      await setDoc(doc(db, "verifications", "verified"), { value: false });
+      await setDoc(doc(db, "verifications", "orientationNumber"), {
+        value: orientationNumber,
+      });
 
       // Start listening for changes
-      const unsubscribe = onSnapshot(
-        doc(db, "verifications", docRef.id),
-        (doc) => {
-          const data = doc.data();
-          if (data && data.detected) {
-            setDetected(true);
-            unsubscribe();
-          }
+      if (docSnap.exists()) {
+        const detectedValue = docSnap.data().value; // Access the 'value' field
+        console.log("Detected value:", detectedValue);
+
+        if (detectedValue === true) {
+          // Check if the value is true
+          setDetected(true);
+          unsubscribe(); // Unsubscribe once the value is detected
         }
-      );
+      } else {
+        console.log("No such document: detected");
+      }
     } catch (error) {
       console.error("Error creating verifier doc:", error);
     }
