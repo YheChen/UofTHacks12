@@ -1,6 +1,30 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { db } from "./firebase";
+
+// Import Firebase dependencies
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyADAhk1O9ahfD5o5S2DE8rWxgmw1CttsR8",
+  authDomain: "viewcaptcha.firebaseapp.com",
+  projectId: "viewcaptcha",
+  storageBucket: "viewcaptcha.firebasestorage.app",
+  messagingSenderId: "107579019457",
+  appId: "1:107579019457:web:e812a2b6293fa779138440",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export default function WebApp() {
   const [docId, setDocId] = useState(null);
@@ -9,25 +33,40 @@ export default function WebApp() {
 
   const createVerification = async () => {
     // Generate a random 2-digit number
-    const randomNum = Math.floor(10 + Math.random() * 90);
-    setVerificationNumber(randomNum);
+    let randomNumber = Math.floor(Math.random() * 900) + 100;
+    console.log(randomNumber);
+    setVerificationNumber(randomNumber);
 
-    // Create a new document in Firestore
-    const docRef = await db.collection("verifications").add({
-      number: randomNum,
-      verified: false,
-    });
-    setDocId(docRef.id);
+    // const docRef = doc(db, "verifications", randomNumber); // random 3-digit ID
+    // Not checking for duplicates just coz
+    // await setDoc(docRef, { detected: false });
+    // await setDoc(docRef, { verified: false });
+    // console.log(`Document created with ID: ${randomNumber}`);
 
-    // Start listening for changes
-    const unsubscribe = docRef.onSnapshot((doc) => {
-      const data = doc.data();
-      if (data.verified) {
-        setVerified(true);
-        unsubscribe(); // Stop listening
-        db.collection("verifications").doc(docRef.id).delete(); // Delete document
-      }
-    });
+    try {
+      // Create a new document in Firestore
+      const docRef = await addDoc(collection(db, "verifications"), {
+        number: randomNumber,
+        detected: false,
+        verified: false,
+      });
+      setDocId(docRef.id);
+
+      // Start listening for changes
+      const unsubscribe = onSnapshot(
+        doc(db, "verifications", docRef.id),
+        (doc) => {
+          const data = doc.data();
+          if (data && data.verified) {
+            setVerified(true);
+            unsubscribe(); // Stop listening
+            // deleteDoc(doc(db, "verifications", docRef.id)); // Delete document
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error creating new verifier doc:", error);
+    }
   };
 
   useEffect(() => {
