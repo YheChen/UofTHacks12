@@ -37,33 +37,36 @@ export default function WebApp() {
 
   const createVerification = async () => {
     const randomNumber = Math.floor(Math.random() * 900) + 100; // Generate a random 3-digit number
-    const orientationNumber = Math.floor(Math.random() * 5) + 1;
+    const randomOtherNumber = Math.floor(Math.random() * 5) + 1;
     setVerificationNumber(randomNumber);
 
     try {
-      // Set individual documents
-      await setDoc(doc(db, "verifications", "verificationNumber"), {
-        value: randomNumber,
-      });
-      await setDoc(doc(db, "verifications", "detected"), { value: false });
-      await setDoc(doc(db, "verifications", "verified"), { value: false });
-      await setDoc(doc(db, "verifications", "orientationNumber"), {
-        value: orientationNumber,
+      const docRef = await addDoc(collection(db, "verifications"), {
+        number: randomNumber,
+        detected: false,
+        verified: false,
+        orientation: randomOtherNumber,
       });
 
-      // Start listening for changes
-      if (docSnap.exists()) {
-        const detectedValue = docSnap.data().value; // Access the 'value' field
-        console.log("Detected value:", detectedValue);
+      console.log(`Document created with ID: ${docRef.id}`);
 
-        if (detectedValue === true) {
-          // Check if the value is true
-          setDetected(true);
-          unsubscribe(); // Unsubscribe once the value is detected
+      // Start listening for changes in the detected field
+      const unsubscribe = onSnapshot(
+        doc(db, "verifications", docRef.id),
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const detectedValue = snapshot.data().detected; // Access the 'detected' field
+            console.log("Detected value:", detectedValue);
+
+            if (detectedValue === true) {
+              setDetected(true); // Set detected to true if the field value is true
+              unsubscribe(); // Stop listening once the value is true
+            }
+          } else {
+            console.log("No such document exists!");
+          }
         }
-      } else {
-        console.log("No such document: detected");
-      }
+      );
     } catch (error) {
       console.error("Error creating verifier doc:", error);
     }
@@ -86,7 +89,7 @@ export default function WebApp() {
       {!isLoggedIn ? (
         <button
           onClick={() => setIsLoggedIn(true)}
-          style={{ padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}
+          style={{ padding: "10px 20px", fontSize: "40px", cursor: "pointer" }}
         >
           LOGIN
         </button>
