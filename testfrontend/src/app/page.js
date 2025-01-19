@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Import Firebase dependencies
 import { initializeApp } from "firebase/app";
@@ -9,7 +10,6 @@ import {
   addDoc,
   onSnapshot,
   doc,
-  deleteDoc,
 } from "firebase/firestore";
 
 // Firebase configuration
@@ -29,17 +29,15 @@ const db = getFirestore(app);
 export default function WebApp() {
   const [docId, setDocId] = useState(null);
   const [verificationNumber, setVerificationNumber] = useState(null);
-  const [verified, setVerified] = useState(false);
   const [detected, setDetected] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   const createVerification = async () => {
-    // Generate a random 3 digit number
-    let randomNumber = Math.floor(Math.random() * 900) + 100;
-    console.log(randomNumber);
+    const randomNumber = Math.floor(Math.random() * 900) + 100; // Generate a random 3-digit number
     setVerificationNumber(randomNumber);
 
     try {
-      // Create a new document in Firestore
       const docRef = await addDoc(collection(db, "verifications"), {
         number: randomNumber,
         detected: false,
@@ -54,37 +52,48 @@ export default function WebApp() {
           const data = doc.data();
           if (data && data.detected) {
             setDetected(true);
-            unsubscribe(); // Stop listening
+            unsubscribe();
           }
         }
       );
     } catch (error) {
-      console.error("Error creating new verifier doc:", error);
+      console.error("Error creating verifier doc:", error);
     }
   };
 
   useEffect(() => {
-    if (!docId) {
+    if (isLoggedIn && !docId) {
       createVerification();
     }
-  }, []);
+  }, [isLoggedIn]);
 
-  if (detected) {
-    return <h1>Verification Successful!</h1>;
-    // Change phoneapp to update detected
-    // Route to check.js from here
-  }
+  useEffect(() => {
+    if (detected) {
+      router.push("/instruction"); // Navigate to instruction.js
+    }
+  }, [detected, router]);
 
   return (
     <div style={{ textAlign: "center", marginTop: "20%" }}>
-      <h1>Web App</h1>
-      {verificationNumber ? (
-        <p>
-          Please enter this number on the app:{" "}
-          <strong>{verificationNumber}</strong>
-        </p>
+      {!isLoggedIn ? (
+        <button
+          onClick={() => setIsLoggedIn(true)}
+          style={{ padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}
+        >
+          LOGIN
+        </button>
       ) : (
-        <p>Generating a number...</p>
+        <>
+          <h1>Web App</h1>
+          {verificationNumber ? (
+            <p>
+              Please enter this number on the app:{" "}
+              <strong>{verificationNumber}</strong>
+            </p>
+          ) : (
+            <p>Generating a number...</p>
+          )}
+        </>
       )}
     </div>
   );

@@ -4,7 +4,7 @@ import {
   NavigationIndependentTree,
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import VerificationScreen from "./VerificationScreen";
+import InitialScreen from "./InitialScreen";
 import InstructionScreen from "./InstructionScreen";
 import TiltScreen from "./TiltScreen";
 import VerifiedScreen from "./VerifiedScreen";
@@ -15,8 +15,8 @@ export default function App() {
   return (
     <NavigationIndependentTree>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Verification">
-          <Stack.Screen name="Verification" component={VerificationScreen} />
+        <Stack.Navigator initialRouteName="Initial">
+          <Stack.Screen name="Initial" component={InitialScreen} />
           <Stack.Screen name="Instructions" component={InstructionScreen} />
           <Stack.Screen name="Tilt" component={TiltScreen} />
           <Stack.Screen name="Verified" component={VerifiedScreen} />

@@ -4,8 +4,29 @@ import { Gyroscope } from "expo-sensors";
 import * as Haptics from "expo-haptics";
 import tilt1 from "./images/tilt1.png";
 import tilt2 from "./images/tilt2.png";
-// import tilt1 from "./images/tilt1.png";
-// import tilt1 from "./images/tilt1.png";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyADAhk1O9ahfD5o5S2DE8rWxgmw1CttsR8",
+  authDomain: "viewcaptcha.firebaseapp.com",
+  projectId: "viewcaptcha",
+  storageBucket: "viewcaptcha.firebasestorage.app",
+  messagingSenderId: "107579019457",
+  appId: "1:107579019457:web:e812a2b6293fa779138440",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export default function TiltScreen({ navigation }) {
   const [cumulativeAngles, setCumulativeAngles] = useState({
@@ -13,7 +34,9 @@ export default function TiltScreen({ navigation }) {
     y: 0,
     z: 0,
   });
-  const [isTiltDetected, setIsTiltDetected] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
+  const [debugText, setDebugText] = useState("Initializing...");
+  const holdTimer = useRef(null);
   const lastUpdateRef = useRef(Date.now());
 
   useEffect(() => {
@@ -41,29 +64,45 @@ export default function TiltScreen({ navigation }) {
   };
 
   useEffect(() => {
-    if (!isTiltDetected && anglesDeg.y >= 90) {
-      setIsTiltDetected(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Tilt Detected", "You tilted the phone 90°!");
-      navigation.navigate("Verified"); // Navigate to VerifiedScreen
+    const isInRange = Math.abs(anglesDeg.y - 90) <= 10; // Y-axis close to 90°
+
+    if (isInRange) {
+      setDebugText(
+        `In range: x=${anglesDeg.x.toFixed(2)}, y=${anglesDeg.y.toFixed(
+          2
+        )}, z=${anglesDeg.z.toFixed(2)}`
+      );
+
+      if (!isHolding) {
+        setIsHolding(true);
+        holdTimer.current = setTimeout(() => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+          navigation.navigate("Verified"); // Navigate to VerifiedScreen
+        }, 2500); // 2.5-second hold timer
+      }
+    } else {
+      setDebugText(
+        `Out of range: x=${anglesDeg.x.toFixed(2)}, y=${anglesDeg.y.toFixed(
+          2
+        )}, z=${anglesDeg.z.toFixed(2)}`
+      );
+      setIsHolding(false);
+      clearTimeout(holdTimer.current); // Reset timer if out of range
     }
-  }, [anglesDeg, isTiltDetected, navigation]);
+  }, [anglesDeg, isHolding, navigation]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tilt Screen</Text>
-      <Image source={require("./images/tilt1.png")} style={styles.image} />
+      <Image source={tilt2} style={styles.image} />
       <Text style={styles.message}>
-        Tilt your phone 90° to the right to proceed.
+        Tilt your phone 90° to the right and hold steady for 1 second to
+        proceed.
       </Text>
 
-      {/* Testing: Display cumulative angles */}
-      <Text style={styles.info}>
-        Cumulative Rotation (degrees) since Start:
-        {"\n"}x: {anglesDeg.x.toFixed(2)}°,
-        {"\n"}y: {anglesDeg.y.toFixed(2)}°,
-        {"\n"}z: {anglesDeg.z.toFixed(2)}°
-      </Text>
+      {/* Debugging: Display cumulative angles */}
+      <Text style={styles.info}>{debugText}</Text>
     </View>
   );
 }
@@ -89,6 +128,12 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 16,
     color: "#333",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  info: {
+    fontSize: 14,
+    color: "#666",
     textAlign: "center",
   },
 });

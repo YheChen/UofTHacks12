@@ -25,23 +25,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export default function VerificationScreen({ navigation }) {
+export default function InitialScreen({ navigation }) {
   const [verificationNumber, setVerificationNumber] = useState("");
   const [generatedNumber, setGeneratedNumber] = useState(null);
 
   const createVerification = async () => {
-    const randomNumber = Math.floor(10 + Math.random() * 90); // Generate a 2-digit number
-    setGeneratedNumber(randomNumber);
-
-    try {
-      await addDoc(collection(db, "verifications"), {
-        number: randomNumber,
-        verified: false,
-      });
-    } catch (error) {
-      console.error("Error creating verification:", error);
-      Alert.alert("Error", "Failed to create verification.");
-    }
+    // const randomNumber = Math.floor(10 + Math.random() * 90); // Generate a 2-digit number
+    // setGeneratedNumber(randomNumber);
+    // try {
+    //   await addDoc(collection(db, "verifications"), {
+    //     number: randomNumber,
+    //     verified: false,
+    //   });
+    // } catch (error) {
+    //   console.error("Error creating verification:", error);
+    //   Alert.alert("Error", "Failed to create verification.");
+    // }
   };
 
   const handleVerify = async () => {
@@ -59,14 +58,13 @@ export default function VerificationScreen({ navigation }) {
 
       if (!querySnapshot.empty) {
         const docRef = querySnapshot.docs[0].ref;
-        await updateDoc(docRef, { verified: true });
-        Alert.alert("Success", "First step of Verification complete!");
+        await updateDoc(docRef, { detected: true });
         navigation.navigate("Instructions");
       } else {
         Alert.alert("Error", "Verification number not found.");
       }
     } catch (error) {
-      console.error("Error verifying document:", error);
+      console.error("Error verifying:", error);
       Alert.alert("Error", "Failed to verify. Please try again.");
     }
   };
@@ -77,13 +75,13 @@ export default function VerificationScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Verification Screen</Text>
+      <Text style={styles.title}>Initial Verification</Text>
       {generatedNumber ? (
         <Text style={styles.info}>
           Please enter the number on your browser:
         </Text>
       ) : (
-        <Text>Generating a number...</Text>
+        <Text>Please enter the number on your browser:</Text>
       )}
       <TextInput
         style={styles.input}
