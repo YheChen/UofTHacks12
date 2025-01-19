@@ -1,40 +1,89 @@
 "use client";
+import React, { useState, useEffect } from "react";
 
-import React, { useEffect, useState } from "react";
-import io from "socket.io-client";
+// Import Firebase dependencies
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
 
-const socket = io("http://100.67.69.9:3001"); // Adjust to your server URL
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyADAhk1O9ahfD5o5S2DE8rWxgmw1CttsR8",
+  authDomain: "viewcaptcha.firebaseapp.com",
+  projectId: "viewcaptcha",
+  storageBucket: "viewcaptcha.firebasestorage.app",
+  messagingSenderId: "107579019457",
+  appId: "1:107579019457:web:e812a2b6293fa779138440",
+};
 
-export default function Home() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Web app connected to server");
-      setIsConnected(true);
-    });
+export default function WebApp() {
+  const [docId, setDocId] = useState(null);
+  const [verificationNumber, setVerificationNumber] = useState(null);
+  const [verified, setVerified] = useState(false);
 
-    socket.on("disconnect", () => {
-      console.log("Web app disconnected from server");
-      setIsConnected(false);
-    });
+  const createVerification = async () => {
+    // Generate a random 3 digit number
+    let randomNumber = Math.floor(Math.random() * 900) + 100;
+    console.log(randomNumber);
+    setVerificationNumber(randomNumber);
 
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-    };
-  }, []);
+    try {
+      // Create a new document in Firestore
+      const docRef = await addDoc(collection(db, "verifications"), {
+        number: randomNumber,
+        detected: false,
+        verified: false,
+      });
+      setDocId(docRef.id);
 
-  const handleLoginClick = () => {
-    // Emit an event that the server will relay to the phone
-    socket.emit("triggerPhone");
+      // Start listening for changes
+      const unsubscribe = onSnapshot(
+        doc(db, "verifications", docRef.id),
+        (doc) => {
+          const data = doc.data();
+          if (data && data.verified) {
+            setVerified(true);
+            unsubscribe(); // Stop listening
+            // deleteDoc(doc(db, "verifications", docRef.id)); // Delete document
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error creating new verifier doc:", error);
+    }
   };
 
+  useEffect(() => {
+    if (!docId) {
+      createVerification();
+    }
+  }, []);
+
+  if (verified) {
+    return <h1>Verification Successful!</h1>;
+  }
+
   return (
-    <div style={{ textAlign: "center", marginTop: 100 }}>
-      <h1>Web Login</h1>
-      <p>Status: {isConnected ? "Connected" : "Disconnected"}</p>
-      <button onClick={handleLoginClick}>Login</button>
+    <div style={{ textAlign: "center", marginTop: "20%" }}>
+      <h1>Web App</h1>
+      {verificationNumber ? (
+        <p>
+          Please enter this number on the app:{" "}
+          <strong>{verificationNumber}</strong>
+        </p>
+      ) : (
+        <p>Generating a number...</p>
+      )}
     </div>
   );
 }
