@@ -4,6 +4,29 @@ import { Gyroscope } from "expo-sensors";
 import * as Haptics from "expo-haptics";
 import tilt1 from "./images/tilt1.png";
 import tilt2 from "./images/tilt2.png";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyADAhk1O9ahfD5o5S2DE8rWxgmw1CttsR8",
+  authDomain: "viewcaptcha.firebaseapp.com",
+  projectId: "viewcaptcha",
+  storageBucket: "viewcaptcha.firebasestorage.app",
+  messagingSenderId: "107579019457",
+  appId: "1:107579019457:web:e812a2b6293fa779138440",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export default function TiltScreen({ navigation }) {
   const [cumulativeAngles, setCumulativeAngles] = useState({
@@ -54,8 +77,9 @@ export default function TiltScreen({ navigation }) {
         setIsHolding(true);
         holdTimer.current = setTimeout(() => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
           navigation.navigate("Verified"); // Navigate to VerifiedScreen
-        }, 2500); // 1-second hold timer
+        }, 2500); // 2.5-second hold timer
       }
     } else {
       setDebugText(

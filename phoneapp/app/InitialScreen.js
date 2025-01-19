@@ -25,7 +25,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export default function VerificationScreen({ navigation }) {
+export default function InitialScreen({ navigation }) {
   const [verificationNumber, setVerificationNumber] = useState("");
   const [generatedNumber, setGeneratedNumber] = useState(null);
 
@@ -64,7 +64,7 @@ export default function VerificationScreen({ navigation }) {
         Alert.alert("Error", "Verification number not found.");
       }
     } catch (error) {
-      console.error("Error verifying document:", error);
+      console.error("Error verifying:", error);
       Alert.alert("Error", "Failed to verify. Please try again.");
     }
   };
