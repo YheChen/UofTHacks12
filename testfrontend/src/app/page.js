@@ -32,16 +32,10 @@ export default function WebApp() {
   const [verified, setVerified] = useState(false);
 
   const createVerification = async () => {
-    // Generate a random 2-digit number
+    // Generate a random 3 digit number
     let randomNumber = Math.floor(Math.random() * 900) + 100;
     console.log(randomNumber);
     setVerificationNumber(randomNumber);
-
-    // const docRef = doc(db, "verifications", randomNumber); // random 3-digit ID
-    // Not checking for duplicates just coz
-    // await setDoc(docRef, { detected: false });
-    // await setDoc(docRef, { verified: false });
-    // console.log(`Document created with ID: ${randomNumber}`);
 
     try {
       // Create a new document in Firestore
