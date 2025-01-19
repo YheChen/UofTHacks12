@@ -10,8 +10,7 @@ export default function InstructionScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Instructions</Text>
       <Text style={styles.info}>
-        Hold your device parallel to your face. Once ready, click the "Begin"
-        button to proceed.
+        Hold your device parallel to your face. Click begin to continue.
       </Text>
       <Button title="Begin" onPress={handleBegin} />
     </View>

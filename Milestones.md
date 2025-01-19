@@ -9,7 +9,7 @@
 
 ### 2: Core Idea
 
-- [ ] Add a database of 5 images
+- [x] Add a database of 2 images
 - [ ] Add tilted version: up, down, left, right
 - [ ] Consider 45 degree tilts in each direction
 - [ ] Add tilted images to the webapp,
