@@ -38,7 +38,6 @@ export default function VerificationScreen({ navigation }) {
         number: randomNumber,
         verified: false,
       });
-      Alert.alert("Verification Begun", `Press OK to Continue`);
     } catch (error) {
       console.error("Error creating verification:", error);
       Alert.alert("Error", "Failed to create verification.");
@@ -61,8 +60,8 @@ export default function VerificationScreen({ navigation }) {
       if (!querySnapshot.empty) {
         const docRef = querySnapshot.docs[0].ref;
         await updateDoc(docRef, { verified: true });
-        Alert.alert("Success", "Verification complete!");
-        navigation.navigate("Instructions"); // Navigate to InstructionScreen
+        Alert.alert("Success", "First step of Verification complete!");
+        navigation.navigate("Instructions");
       } else {
         Alert.alert("Error", "Verification number not found.");
       }

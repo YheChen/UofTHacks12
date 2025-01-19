@@ -1,19 +1,17 @@
 import React from "react";
-import { View, Text, Button, StyleSheet, Alert } from "react-native";
+import { View, Text, Button, StyleSheet } from "react-native";
 
-export default function InstructionScreen() {
+export default function InstructionScreen({ navigation }) {
   const handleBegin = () => {
-    Alert.alert(
-      "Begin button pressed",
-      "You can now proceed to the next stage!"
-    );
+    navigation.navigate("Tilt"); // Navigate to the Tilt screen
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Instructions</Text>
       <Text style={styles.info}>
-        Hold your device parallel to your face, then click begin to continue.
+        Hold your device parallel to your face. Once ready, click the "Begin"
+        button to proceed.
       </Text>
       <Button title="Begin" onPress={handleBegin} />
     </View>
