@@ -1,40 +1,56 @@
 "use client";
+import React, { useState, useEffect } from "react";
+import { db } from "./firebase";
 
-import React, { useEffect, useState } from "react";
-import io from "socket.io-client";
+export default function WebApp() {
+  const [docId, setDocId] = useState(null);
+  const [verificationNumber, setVerificationNumber] = useState(null);
+  const [verified, setVerified] = useState(false);
 
-const socket = io("http://100.67.69.9:3001"); // Adjust to your server URL
+  const createVerification = async () => {
+    // Generate a random 2-digit number
+    const randomNum = Math.floor(10 + Math.random() * 90);
+    setVerificationNumber(randomNum);
 
-export default function Home() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
-
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Web app connected to server");
-      setIsConnected(true);
+    // Create a new document in Firestore
+    const docRef = await db.collection("verifications").add({
+      number: randomNum,
+      verified: false,
     });
+    setDocId(docRef.id);
 
-    socket.on("disconnect", () => {
-      console.log("Web app disconnected from server");
-      setIsConnected(false);
+    // Start listening for changes
+    const unsubscribe = docRef.onSnapshot((doc) => {
+      const data = doc.data();
+      if (data.verified) {
+        setVerified(true);
+        unsubscribe(); // Stop listening
+        db.collection("verifications").doc(docRef.id).delete(); // Delete document
+      }
     });
-
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-    };
-  }, []);
-
-  const handleLoginClick = () => {
-    // Emit an event that the server will relay to the phone
-    socket.emit("triggerPhone");
   };
 
+  useEffect(() => {
+    if (!docId) {
+      createVerification();
+    }
+  }, []);
+
+  if (verified) {
+    return <h1>Verification Successful!</h1>;
+  }
+
   return (
-    <div style={{ textAlign: "center", marginTop: 100 }}>
-      <h1>Web Login</h1>
-      <p>Status: {isConnected ? "Connected" : "Disconnected"}</p>
-      <button onClick={handleLoginClick}>Login</button>
+    <div style={{ textAlign: "center", marginTop: "20%" }}>
+      <h1>Web App</h1>
+      {verificationNumber ? (
+        <p>
+          Please enter this number on the app:{" "}
+          <strong>{verificationNumber}</strong>
+        </p>
+      ) : (
+        <p>Generating a number...</p>
+      )}
     </div>
   );
 }
