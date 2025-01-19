@@ -95,14 +95,15 @@ export default function WebApp() {
         </button>
       ) : (
         <>
-          <h1>Web App</h1>
+          <h1 style={{ fontSize: "48px" }}>Web App</h1> {/* Larger heading */}
           {verificationNumber ? (
-            <p>
+            <p style={{ fontSize: "24px" }}>
               Please enter this number on the app:{" "}
-              <strong>{verificationNumber}</strong>
+              <strong style={{ fontSize: "32px" }}>{verificationNumber}</strong>{" "}
+              {/* Larger font for strong text */}
             </p>
           ) : (
-            <p>Generating a number...</p>
+            <p style={{ fontSize: "24px" }}>Generating a number...</p>
           )}
         </>
       )}
