@@ -30,6 +30,7 @@ export default function WebApp() {
   const [docId, setDocId] = useState(null);
   const [verificationNumber, setVerificationNumber] = useState(null);
   const [verified, setVerified] = useState(false);
+  const [detected, setDetected] = useState(false);
 
   const createVerification = async () => {
     // Generate a random 3 digit number
@@ -51,10 +52,9 @@ export default function WebApp() {
         doc(db, "verifications", docRef.id),
         (doc) => {
           const data = doc.data();
-          if (data && data.verified) {
-            setVerified(true);
+          if (data && data.detected) {
+            setDetected(true);
             unsubscribe(); // Stop listening
-            // deleteDoc(doc(db, "verifications", docRef.id)); // Delete document
           }
         }
       );
@@ -69,8 +69,10 @@ export default function WebApp() {
     }
   }, []);
 
-  if (verified) {
+  if (detected) {
     return <h1>Verification Successful!</h1>;
+    // Change phoneapp to update detected
+    // Route to check.js from here
   }
 
   return (
