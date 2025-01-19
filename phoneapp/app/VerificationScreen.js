@@ -1,8 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-
-// Import Firebase dependencies
-import { initializeApp } from "firebase/app";
 import {
   getFirestore,
   collection,
@@ -10,7 +7,9 @@ import {
   where,
   getDocs,
   updateDoc,
+  addDoc,
 } from "firebase/firestore";
+import { initializeApp } from "firebase/app";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -26,8 +25,25 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export default function App() {
+export default function VerificationScreen({ navigation }) {
   const [verificationNumber, setVerificationNumber] = useState("");
+  const [generatedNumber, setGeneratedNumber] = useState(null);
+
+  const createVerification = async () => {
+    const randomNumber = Math.floor(10 + Math.random() * 90); // Generate a 2-digit number
+    setGeneratedNumber(randomNumber);
+
+    try {
+      await addDoc(collection(db, "verifications"), {
+        number: randomNumber,
+        verified: false,
+      });
+      Alert.alert("Verification Begun", `Press OK to Continue`);
+    } catch (error) {
+      console.error("Error creating verification:", error);
+      Alert.alert("Error", "Failed to create verification.");
+    }
+  };
 
   const handleVerify = async () => {
     if (!verificationNumber) {
@@ -36,7 +52,6 @@ export default function App() {
     }
 
     try {
-      // Query Firestore for the document with the matching number
       const q = query(
         collection(db, "verifications"),
         where("number", "==", parseInt(verificationNumber))
@@ -45,10 +60,9 @@ export default function App() {
 
       if (!querySnapshot.empty) {
         const docRef = querySnapshot.docs[0].ref;
-
-        // Update the `verified` field to true
         await updateDoc(docRef, { verified: true });
         Alert.alert("Success", "Verification complete!");
+        navigation.navigate("Instructions"); // Navigate to InstructionScreen
       } else {
         Alert.alert("Error", "Verification number not found.");
       }
@@ -58,9 +72,20 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    createVerification();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>React Native App</Text>
+      <Text style={styles.title}>Verification Screen</Text>
+      {generatedNumber ? (
+        <Text style={styles.info}>
+          Please enter the number on your browser:
+        </Text>
+      ) : (
+        <Text>Generating a number...</Text>
+      )}
       <TextInput
         style={styles.input}
         placeholder="Enter Verification Number"
@@ -83,6 +108,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     marginBottom: 20,
+    fontWeight: "bold",
+  },
+  info: {
+    fontSize: 16,
+    marginVertical: 20,
+    textAlign: "center",
+  },
+  strong: {
+    fontWeight: "bold",
+    color: "#007BFF",
   },
   input: {
     width: "80%",
