@@ -8,8 +8,10 @@ import {
   getFirestore,
   collection,
   addDoc,
+  setDoc,
   onSnapshot,
   doc,
+  getDoc,
 } from "firebase/firestore";
 
 // Firebase configuration
@@ -35,6 +37,7 @@ export default function WebApp() {
 
   const createVerification = async () => {
     const randomNumber = Math.floor(Math.random() * 900) + 100; // Generate a random 3-digit number
+    const randomOtherNumber = Math.floor(Math.random() * 5) + 1;
     setVerificationNumber(randomNumber);
 
     try {
@@ -42,17 +45,25 @@ export default function WebApp() {
         number: randomNumber,
         detected: false,
         verified: false,
+        orientation: randomOtherNumber,
       });
-      setDocId(docRef.id);
 
-      // Start listening for changes
+      console.log(`Document created with ID: ${docRef.id}`);
+
+      // Start listening for changes in the detected field
       const unsubscribe = onSnapshot(
         doc(db, "verifications", docRef.id),
-        (doc) => {
-          const data = doc.data();
-          if (data && data.detected) {
-            setDetected(true);
-            unsubscribe();
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const detectedValue = snapshot.data().detected; // Access the 'detected' field
+            console.log("Detected value:", detectedValue);
+
+            if (detectedValue === true) {
+              setDetected(true); // Set detected to true if the field value is true
+              unsubscribe(); // Stop listening once the value is true
+            }
+          } else {
+            console.log("No such document exists!");
           }
         }
       );
@@ -78,20 +89,22 @@ export default function WebApp() {
       {!isLoggedIn ? (
         <button
           onClick={() => setIsLoggedIn(true)}
-          style={{ padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}
+          style={{ padding: "10px 20px", fontSize: "40px", cursor: "pointer" }}
         >
           LOGIN
         </button>
       ) : (
         <>
-          <h1>Web App</h1>
+          <h1 style={{ fontSize: "48px" }}>ViewFA Authentication</h1>{" "}
+          {/* Larger heading */}
           {verificationNumber ? (
-            <p>
+            <p style={{ fontSize: "24px" }}>
               Please enter this number on the app:{" "}
-              <strong>{verificationNumber}</strong>
+              <strong style={{ fontSize: "32px" }}>{verificationNumber}</strong>{" "}
+              {/* Larger font for strong text */}
             </p>
           ) : (
-            <p>Generating a number...</p>
+            <p style={{ fontSize: "24px" }}>Generating a number...</p>
           )}
         </>
       )}

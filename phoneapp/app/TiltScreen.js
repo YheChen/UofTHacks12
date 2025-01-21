@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, Image, StyleSheet, Alert } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 import { Gyroscope } from "expo-sensors";
 import * as Haptics from "expo-haptics";
 import tilt1 from "./images/tilt1.png";
-import tilt2 from "./images/tilt2.png";
 import {
   getFirestore,
   collection,
@@ -11,6 +10,7 @@ import {
   where,
   getDocs,
   updateDoc,
+  doc,
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 
@@ -38,6 +38,47 @@ export default function TiltScreen({ navigation }) {
   const [debugText, setDebugText] = useState("Initializing...");
   const holdTimer = useRef(null);
   const lastUpdateRef = useRef(Date.now());
+  const [orientation, setOrientation] = useState(null);
+
+  useEffect(() => {
+    const fetchDocument = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "verifications"));
+        if (!querySnapshot.empty) {
+          const firstDoc = querySnapshot.docs[0];
+          const data = firstDoc.data();
+          // Set orientation based on document value
+          setOrientation(data.orientation);
+        } else {
+          console.log("No documents found!");
+        }
+      } catch (error) {
+        console.error("Error fetching document:", error);
+      }
+    };
+
+    fetchDocument();
+  });
+
+  const handleVerify = async () => {
+    try {
+      // Get the first document in the "verifications" collection
+      const querySnapshot = await getDocs(collection(db, "verifications"));
+
+      if (!querySnapshot.empty) {
+        const firstDoc = querySnapshot.docs[0]; // Get the first document
+        const docRef = doc(db, "verifications", firstDoc.id); // Reference to the document
+        await updateDoc(docRef, { verified: true });
+        navigation.navigate("Verified"); // Navigate to VerifiedScreen
+
+        console.log("Database updated: User verified.");
+      } else {
+        console.log("No documents found in the 'verifications' collection.");
+      }
+    } catch (error) {
+      console.error("Error updating the database:", error);
+    }
+  };
 
   useEffect(() => {
     Gyroscope.setUpdateInterval(100);
@@ -64,7 +105,24 @@ export default function TiltScreen({ navigation }) {
   };
 
   useEffect(() => {
-    const isInRange = Math.abs(anglesDeg.y - 90) <= 10; // Y-axis close to 90°
+    let isInRange = false;
+
+    if (orientation === 1) {
+      // Orientation 1: Check for anglesDeg.x close to -45°
+      isInRange = Math.abs(anglesDeg.x + 45) <= 10;
+    } else if (orientation === 2) {
+      // Orientation 2: Check for anglesDeg.y close to 45°
+      isInRange = Math.abs(anglesDeg.y + 45) <= 10;
+    } else if (orientation === 3) {
+      // Orientation 3: Check for anglesDeg.y close to -45°
+      isInRange = Math.abs(anglesDeg.y - 45) <= 10;
+    } else if (orientation === 4) {
+      // Orientation 4: Check for anglesDeg.z close to 45°
+      isInRange = Math.abs(anglesDeg.z - 90) <= 10;
+    } else if (orientation === 5) {
+      // Orientation 5: Check for anglesDeg.z close to -45°
+      isInRange = Math.abs(anglesDeg.z + 90) <= 10;
+    }
 
     if (isInRange) {
       setDebugText(
@@ -77,8 +135,7 @@ export default function TiltScreen({ navigation }) {
         setIsHolding(true);
         holdTimer.current = setTimeout(() => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-          navigation.navigate("Verified"); // Navigate to VerifiedScreen
+          handleVerify(); // Updates the verified tag
         }, 2500); // 2.5-second hold timer
       }
     } else {
@@ -95,10 +152,9 @@ export default function TiltScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tilt Screen</Text>
-      <Image source={tilt2} style={styles.image} />
+      <Image source={tilt1} style={styles.image} />
       <Text style={styles.message}>
-        Tilt your phone 90° to the right and hold steady for 1 second to
-        proceed.
+        Orient the phone correctly and hold steady for 2.5 seconds to proceed.
       </Text>
 
       {/* Debugging: Display cumulative angles */}
